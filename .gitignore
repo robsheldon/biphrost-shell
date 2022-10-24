@@ -1,3 +1,0 @@
-scripts/*
-!scripts/import_script.sh
-.cache/*
