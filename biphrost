@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script should be located at /usr/local/sbin/golem
+# Adapted from https://github.com/robsheldon/golem
 
 ################################################################################
 #                                                                              #
@@ -70,7 +70,16 @@ _cache_check () {
     # the input glob if no matches were found, but future versions may change
     # this behavior.
     if [ ${#cachedfiles[@]} -eq 1 ] && [ ${#sourcefiles[@]} -eq 1 ] && [ "${cachedfiles[0]}" != "$scriptdir/.cache/$file_basename.*" ] && [ "${sourcefiles[0]}" != "$scriptdir/scripts/$file_basename.*" ]; then
-        # Found one match of each, timestamps can be compared.
+        # Try a hash comparison first.
+        cached_hash="$(head -n 10 "${cachedfiles[0]}" | grep -oP '(?<=^# source hash: )[0-9a-f]{32}')"
+        if [ -n "$cached_hash" ] && [ "$cached_hash" = "$(md5sum "${sourcefiles[0]}" | grep -oP '^[0-9a-f]{32}')" ]; then
+            # Good enough. This allows for timestamp mismatches between cached
+            # scripts and their source files so long as the content of the source
+            # file hasn't changed.
+            echo "${cachedfiles[0]}"
+            return 0
+        fi
+        # Hash not stored in cached script, or hash mismatch. Compare timestamps.
         cached_ts=$(date -r "${cachedfiles[0]}" '+%s')
         source_ts=$(date -r "${sourcefiles[0]}" '+%s')
         if [ "$cached_ts" = "$source_ts" ]; then
@@ -569,30 +578,37 @@ else
     if [ -z "$command_script" ]; then
         fail "No matching command script found for \"$*\""
     fi
+    # Run any local "setup" sripts first.
+    pre_run="$scriptdir/setup/$(basename "$command_script")"
+    if [ -f "$pre_run" ]; then
+        /bin/bash "$pre_run" "$(printf '@%s ' "${destinations[@]}")" "$(printf '%q ' "${longopts[@]}" "$@")"
+    fi
     if [ ${#destinations[@]} -eq 0 ]; then
-        # No remote destinations, run command script locally.
-        $scriptshell "$command_script" "${longopts[@]}" $*
+        # No destination specified. This is prohibited on biphrost bastions.
+        fail "No container specified."
     else
         # One or more remote destinations.
-        # Start by converting the selected command script into a base64 blob.
-        # This is because several different common approaches to executing
-        # arbitrary shell scripts over ssh don't work well. After several hours
-        # of trial and error, I found a better answer at this under-appreciated
-        # comment on StackOverflow: https://unix.stackexchange.com/a/518960
-        scripthack=$(base64 "$command_script" | tr -d '\n')
         for destination in "${destinations[@]}"; do
-            # The destination should be defined in the user's local ssh config file.
-            ssh_host=$(ssh -G "$destination" | grep -Pio '(?<=^hostname ).*$')
-            if [ -z "$ssh_host" ]; then
-                fail "your ssh configuration did not return a valid hostname for the remote destination $destination"
+            # This section has been changed from upstream to target hsoted
+            # containers instead of remote server environments.
+            # Destinations can be given as the container label ("lxc0001")
+            # or as a hostname assigned to the container.
+            # Resolve $destination to a container label:
+            container="$(grep "\\b$destination\\b" /etc/hosts | grep -oP '\blxc[0-9]{4}\b')"
+            if [[ $container =~ ^lxc[0-9]{4}$ ]]; then
+                # This appears to be the best way to execute the matching script
+                # over sudo-and-lxc-attach.
+                cat "$command_script" | sudo -u "$container" sh -c "lxc-unpriv-attach -n "$container" -- /bin/bash -s - "$(printf '%q ' "${longopts[@]}" "$@")""
+            else
+                echo "No matching container found for: $destination"
+                continue
             fi
-            hostaddr=$(ping -q -n -c 1 -t 1 -w 1 "$ssh_host" 2>&1 | grep -Po "\\b$ssh_host\\s+\\([^\\(\\)]+\\)")
-            if [ -z "$hostaddr" ]; then
-                fail "$destination could not be resolved to a valid network address"
-            fi
-            # Okay. Run this command script on a remote host.
-            ssh -qt "$destination" /bin/bash "<(echo \"$scripthack\" | base64 --decode)" "${longopts[*]}" "$*"
         done
+    fi
+    # Run any "cleanup" scripts for this command.
+    post_run="$scriptdir/cleanup/$(basename "$command_script")"
+    if [ -f "$post_run" ]; then
+        /bin/bash "$post_run" "$(printf '@%s ' "${destinations[@]}")" "$(printf '%q ' "${longopts[@]}" "$@")"
     fi
 fi
 
