@@ -757,61 +757,61 @@ else
     echo
 fi
 
-# Check the environment.
-# A "scripts" directory should be present in the parent directory.
-# This doesn't get automatically fixed because it's indicative of something
-# unusual about the environment.
-if [ ! -d "$scriptspath" ]; then
-    fail "The \"$scriptsdirname\" directory is missing from \"$mydir\". It should have been included in the repository. Please create it manually."
-fi
-# The .cache directory should exist because _import_script() uses it to sanity-
-# check the environment. This can be created if it's not present.
-if [ ! -d "$cachepath" ]; then
-    if ! mkdir -p "$cachepath"; then
-        fail "\"$cachepath\" doesn't exist and could not be created. Please create it manually and try again."
-    fi
-fi
 
-if [ $# -gt 2 ] && [ "$1" = "import" ] && [ "$2" = "script" ]; then
+if [ "${*:1:3}" = "import local script" ]; then
     # When invoked by the user, the "import script" words need to be shifted.
-    shift; shift
+    shift; shift; shift
+    scriptsdirname="local"
+    cachedirname=".cache/local"
+    scriptspath="$mydir/$scriptsdirname"
+    cachepath="$mydir/$cachedirname"
+    _import_script "$@"
+elif [ "${*:1:3}" = "import remote script" ]; then
+    shift; shift; shift
+    scriptsdirname="lxc"
+    cachedirname=".cache/lxc"
+    scriptspath="$mydir/$scriptsdirname"
+    cachepath="$mydir/$cachedirname"
     _import_script "$@"
 else
-    command_script=$(_shell_resolve_cmd "$*" "$cachepath" "$scriptspath")
-    if [ -z "$command_script" ]; then
-        fail "No matching command script found for \"$*\""
-    fi
-    # Run any local "setup" sripts first.
-    pre_run="$mydir/setup/$(basename "$command_script")"
-    if [ -f "$pre_run" ]; then
-        /bin/bash "$pre_run" "$(printf '@%s ' "${destinations[@]}")" "$(printf '%q ' "${longopts[@]}" "$@")"
-    fi
     if [ ${#destinations[@]} -eq 0 ]; then
-        # No destination specified. This is prohibited on biphrost bastions.
-        fail "No container specified."
+        scriptsdirname="local"
+        cachedirname=".cache/local"
+        scriptspath="$mydir/$scriptsdirname"
+        cachepath="$mydir/$cachedirname"
+        command_script=$(_shell_resolve_cmd "$*" "$cachepath" "$scriptspath")
+        if [ -z "$command_script" ]; then
+            fail "No matching command script found for \"$*\""
+        else
+            /bin/bash "$command_script" "$(printf '@%s ' "${destinations[@]}")" "$(printf '%q ' "${longopts[@]}" "$@")"
+        fi
     else
         # One or more remote destinations.
-        for destination in "${destinations[@]}"; do
-            # This section has been changed from upstream to target hsoted
-            # containers instead of remote server environments.
-            # Destinations can be given as the container label ("lxc0001")
-            # or as a hostname assigned to the container.
-            # Resolve $destination to a container label:
-            container="$(grep "\\b$destination\\b" /etc/hosts | grep -oP '\blxc[0-9]{4}\b')"
-            if [[ $container =~ ^lxc[0-9]{4}$ ]]; then
-                # This appears to be the best way to execute the matching script
-                # over sudo-and-lxc-attach.
-                cat "$command_script" | sudo -u "$container" sh -c "lxc-unpriv-attach -n "$container" -- /bin/bash -s - "$(printf '%q ' "${longopts[@]}" "$@")""
-            else
-                echo "No matching container found for: $destination"
-                continue
-            fi
-        done
-    fi
-    # Run any "cleanup" scripts for this command.
-    post_run="$mydir/cleanup/$(basename "$command_script")"
-    if [ -f "$post_run" ]; then
-        /bin/bash "$post_run" "$(printf '@%s ' "${destinations[@]}")" "$(printf '%q ' "${longopts[@]}" "$@")"
+        scriptsdirname="lxc"
+        cachedirname=".cache/lxc"
+        scriptspath="$mydir/$scriptsdirname"
+        cachepath="$mydir/$cachedirname"
+        command_script=$(_shell_resolve_cmd "$*" "$cachepath" "$scriptspath")
+        if [ -z "$command_script" ]; then
+            fail "No matching command script found for \"$*\""
+        else
+            for destination in "${destinations[@]}"; do
+                # This section has been changed from upstream to target hsoted
+                # containers instead of remote server environments.
+                # Destinations can be given as the container label ("lxc0001")
+                # or as a hostname assigned to the container.
+                # Resolve $destination to a container label:
+                container="$(grep "\\b$destination\\b" /etc/hosts | grep -oP '\blxc[0-9]{4}\b')"
+                if [[ $container =~ ^lxc[0-9]{4}$ ]]; then
+                    # This appears to be the best way to execute the matching script
+                    # over sudo-and-lxc-attach.
+                    cat "$command_script" | sudo -u "$container" sh -c "lxc-unpriv-attach -n "$container" -- /bin/bash -s - "$(printf '%q ' "${longopts[@]}" "$@")""
+                else
+                    echo "No matching container found for: $destination"
+                    continue
+                fi
+            done
+        fi
     fi
 fi
 
