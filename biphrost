@@ -805,7 +805,7 @@ else
                 if [[ $container =~ ^lxc[0-9]{4}$ ]]; then
                     # This appears to be the best way to execute the matching script
                     # over sudo-and-lxc-attach.
-                    cat "$command_script" | sudo -u "$container" sh -c "lxc-unpriv-attach -n "$container" -- /bin/bash -s - "$(printf '%q ' "${longopts[@]}" "$@")""
+                    cat "$command_script" | sudo -u "$container" sh -c "lxc-unpriv-attach -q -n "$container" -- 2>/dev/null /bin/bash -s - "$(printf '%q ' "${longopts[@]}" "$@")""
                 else
                     echo "No matching container found for: $destination"
                     continue
