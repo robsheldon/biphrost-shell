@@ -783,7 +783,8 @@ else
         if [ -z "$command_script" ]; then
             fail "No matching command script found for \"$*\""
         else
-            /bin/bash "$command_script" "$(printf '@%s ' "${destinations[@]}")" "$(printf '%q ' "${longopts[@]}" "$@")"
+            # shellcheck disable=SC2046
+            /bin/bash "$command_script" "$@" $( (( ${#longopts[@]} )) && printf '%q ' "${longopts[@]}")
         fi
     else
         # One or more remote destinations.
@@ -805,6 +806,10 @@ else
                 if [[ $container =~ ^lxc[0-9]{4}$ ]]; then
                     # This appears to be the best way to execute the matching script
                     # over sudo-and-lxc-attach.
+                    # Shellcheck reeeeeeeaally hates this next line, but I'm pretty
+                    # sure all of its complaints are false positives.
+                    # But I accept that this line is a code smell.
+                    # shellcheck disable=SC2002,SC2027,SC2086,SC2046
                     cat "$command_script" | sudo -u "$container" sh -c "lxc-unpriv-attach -q -n "$container" -- 2>/dev/null /bin/bash -s - "$(printf '%q ' "${longopts[@]}" "$@")""
                 else
                     echo "No matching container found for: $destination"
