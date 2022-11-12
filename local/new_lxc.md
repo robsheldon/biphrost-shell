@@ -78,16 +78,15 @@ else
     uid_to_base="${uidmap/ */}"
     gid_to_base="${gidmap/ */}"
     sudo -u "$copy_from" sh -c "lxc-copy -s -e -D -n \"$copy_from\" -N \"$container\" --allowrunning -l INFO" && sleep 1
-    sudo chown "$uid_to_base":"$container" /srv/lxc/"$container"
+    sudo chown "${uidmap/ */}":"$container" /srv/lxc/"$container"
     sudo chown "$container":"$container" /srv/lxc/"$container"/config
-    # This is awful. :(
-    while read -r uid; do
-        sudo find /srv/lxc/"$container"/rootfs -uid "$((uid_from_base+uid))" -exec chown "$((uid_to_base+uid))" '{}' \; 2>/dev/null
-    done < <(cut -d ':' -f 3 /srv/lxc/"$container"/rootfs/etc/passwd)
-    # *sob*
-    while read -r gid; do
-        sudo find /srv/lxc/"$container"/rootfs -gid "$((gid_from_base+gid))" -exec chgrp "$((gid_to_base+gid))" '{}' \; 2>/dev/null
-    done < <(cut -d ':' -f 3 /srv/lxc/"$container"/rootfs/etc/group)
+    # This is the least awful incantation I can come up with for updating the
+    # uid/gid attributes on all files in the new container.
+    uid_diff=$((uid_to_base-uid_from_base))
+    gid_diff=$((gid_to_base-gid_from_base))
+    while read -r -d $'\0' uid gid file; do
+        sudo chown -h $((uid+uid_diff)):$((gid+gid_diff)) "$file"
+    done < <(find -P /srv/lxc/"$container"/rootfs/ -printf '%U %G %p\0')
     sudo sed -i -e "s/^lxc.idmap = u .*\$/lxc.idmap = u 0 $uidmap/g" -e "s/^lxc.idmap = g .*\$/lxc.idmap = g 0 $gidmap/g" -e "s/^lxc.net.0.ipv4.address = .*\$/lxc.net.0.ipv4.address = $nextip/g" /srv/lxc/"$container"/config
 fi
 ```
@@ -183,6 +182,12 @@ usermod -l lxc0007 -d /home/lxc0007 -m lxc0001
 Apparently I didn't record a per-site nginx configuration here before nuking all of the servers running this configuration. Oops. A new nginx site config will need to be put together.
 
 Also review [Common Nginx misconfigurations that leave your web server open to attack](https://news.ycombinator.com/item?id=26259955) and ensure all those landmines are avoided.
+
+`/home/lxcNNNN/ssl` directory needs to be cleaned up after a container is cloned from another container.
+
+```todo
+while read uid gid file; do echo "$((uid-558752)):$((gid-558752)) $file"; done < <(find /srv/lxc/lxc0007/rootfs/ \( -uid 558752 -o -gid 558752 \) -printf '%U %G "%p"\n') | less
+```
 
 
 # References
