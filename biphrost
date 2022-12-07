@@ -257,7 +257,7 @@ _import_script () {
         fi
         cached=$(_cache_update "$destfile")
         if [ -f "$cached" ]; then
-            echo "Successfully imported \"$destcmd\" as \"$destfile$dest_ext\""
+            echo "Successfully imported \"$destfile$dest_ext\" as \"$destcmd\""
         else
             fail "$cached"
         fi
