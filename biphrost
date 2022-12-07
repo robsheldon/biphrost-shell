@@ -698,8 +698,8 @@ while [ $# -gt 0 ] && [[ "$1" ]]; do
             if [ $# -lt 2 ]; then
                 fail "Missing value for $1"
             fi
-            longopts+=("$(printf '%s' "$1")")
-            longopts+=("$(printf '%s' "$2")")
+            longopts+=("$1")
+            longopts+=("$2")
             shift 2
             ;;
         *)
@@ -797,20 +797,15 @@ else
             fail "No matching command script found for \"$*\""
         else
             for destination in "${destinations[@]}"; do
-                # This section has been changed from upstream to target hsoted
+                # This section has been changed from upstream to target hosted
                 # containers instead of remote server environments.
                 # Destinations can be given as the container label ("lxc0001")
                 # or as a hostname assigned to the container.
                 # Resolve $destination to a container label:
                 container="$(grep "\\b$destination\\b" /etc/hosts | grep -oP '\blxc[0-9]{4}\b')"
                 if [[ $container =~ ^lxc[0-9]{4}$ ]]; then
-                    # This appears to be the best way to execute the matching script
-                    # over sudo-and-lxc-attach.
-                    # Shellcheck reeeeeeeaally hates this next line, but I'm pretty
-                    # sure all of its complaints are false positives.
-                    # But I accept that this line is a code smell.
-                    # shellcheck disable=SC2002,SC2027,SC2086,SC2046
-                    cat "$command_script" | sudo -u "$container" sh -c "lxc-unpriv-attach -q -n "$container" -- 2>/dev/null /bin/bash -s - "$(printf '%q ' "${longopts[@]}" "$@")""
+                    # shellcheck disable=SC2002
+                    cat "$command_script" | sudo -u "$container" -- lxc-unpriv-attach -q -n "$container" -- /bin/bash -s - "$@" "${longopts[@]}"
                 else
                     echo "No matching container found for: $destination"
                     continue
