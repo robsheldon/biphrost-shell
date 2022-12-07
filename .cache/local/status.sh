@@ -361,8 +361,8 @@ while [ $# -gt 0 ] && [[ "$1" ]]; do
             if [ $# -lt 2 ]; then
                 fail "Missing value for $1"
             fi
-            longopts+=("$(printf '%s' "$1")")
-            longopts+=("$(printf '%s' "$2")")
+            longopts+=("$1")
+            longopts+=("$2")
             shift 2
             ;;
         *)
