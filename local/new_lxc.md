@@ -68,7 +68,7 @@ EOF
 **Create the container**
 `--keyserver...` is used because the default keyserver, pool.sks-keyservers.net, seems to be having some networking issues (reported on e.g. https://discuss.linuxcontainers.org/t/3-0-unable-to-fetch-gpg-key-from-keyserver/2015/3)
 
-If the `--copy` parameter was used, then copy an existing container instead of creating a new one. Copied containers need file ownership fixed and their LXC config file updated.
+If the `--copy` parameter was used, then copy an existing container instead of creating a new one. Copied containers need file ownership fixed and their LXC config file updated. `-l INFO` is critical because `lxc-copy` will routinely fail without any output or debugging info otherwise.
 ```bash
 if [ -z "$copy_from" ]; then
     sudo -u "$container" sh -c "lxc-create -t download -B btrfs -n $container -- -d debian -r bullseye -a amd64 --keyserver keyserver.ubuntu.com" && sleep 1
@@ -154,6 +154,8 @@ fi
 default_names+=("localhost")
 # shellcheck disable=SC2086
 sudo biphrost @$container init network --hostnames "${default_names[*]}"
+echo -e "Restarting $container..."
+sudo -u "$container" sh -c "lxc-stop -n '$container'" && sudo -u "$container" sh -c "lxc-unpriv-start -n '$container'" && echo " done."
 ```
 
 **Restart the container to ensure that the new network configuration starts cleanly**
@@ -184,10 +186,6 @@ Apparently I didn't record a per-site nginx configuration here before nuking all
 Also review [Common Nginx misconfigurations that leave your web server open to attack](https://news.ycombinator.com/item?id=26259955) and ensure all those landmines are avoided.
 
 `/home/lxcNNNN/ssl` directory needs to be cleaned up after a container is cloned from another container.
-
-```todo
-while read uid gid file; do echo "$((uid-558752)):$((gid-558752)) $file"; done < <(find /srv/lxc/lxc0007/rootfs/ \( -uid 558752 -o -gid 558752 \) -printf '%U %G "%p"\n') | less
-```
 
 
 # References
