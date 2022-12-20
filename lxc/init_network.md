@@ -53,7 +53,11 @@ EOF
 Configure the container to use Cloudflare's public DNS.
 ```bash
 echo "nameserver 1.1.1.1" | tee /etc/resolv.conf >/dev/null
+chmod 0644 /etc/resolv.conf
 ```
+
+
+**NOTE: CONTAINER MUST BE RESTARTED FOR CHANGES TO TAKE EFFECT**
 
 
 ## TODO
