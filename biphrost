@@ -695,12 +695,14 @@ while [ $# -gt 0 ] && [[ "$1" ]]; do
             break
             ;;
         --*)
-            if [ $# -lt 2 ]; then
-                fail "Missing value for $1"
-            fi
             longopts+=("$1")
-            longopts+=("$2")
-            shift 2
+            shift
+            if [ $# -lt 1 ] || [[ "$1" =~ ^--.+ ]]; then
+                longopts+=("")
+            else
+                longopts+=("$1")
+                shift
+            fi
             ;;
         *)
             args+=("$1")
