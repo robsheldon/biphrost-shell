@@ -1,0 +1,57 @@
+# Return a list of hostnames for a container
+or all containers on the server with `--all`, and optionally verify them with `--verify`.
+
+**Validate container argument**
+```bash
+[ "$1" = "get" ] && shift
+[ "$1" = "hostnames" ] && shift
+if loadopt "all" >/dev/null; then
+    container="*"
+else
+    if [ $# -lt 1 ]; then
+        fail ""
+    fi
+    if ! [[ "$1" =~ ^lxc[0-9]{4}$ ]]; then
+        fail ""
+    fi
+    if [ ! -f /etc/nginx/sites-enabled/"$1" ]; then
+        fail ""
+    fi
+    if [ ! -d /home/"$1" ]; then
+        fail ""
+    fi
+    container="$1"
+fi
+```
+
+
+**Retrieve current hostnames from nginx configuration for this container**
+```bash
+# Shut up, shellcheck.
+#shellcheck disable=SC2207,SC2086
+declare -a hostnames=($(grep -orhP '^\s*server_name\s*\K[^\.]+\..+(?=;)' /etc/nginx/sites-enabled/$container))
+if ! loadopt "verify" >/dev/null; then
+    for hostname in "${hostnames[@]}"; do
+        echo "$hostname"
+    done
+    exit 0
+fi
+```
+
+
+**If --verify, then verify each hostname in the nginx configuration**
+```bash
+for hostname in "${hostnames[@]}"; do
+    container="$(grep -l "^\\s*server_name\\s*.*\\b$hostname\\b" /etc/nginx/sites-enabled/* | xargs basename 2>/dev/null)"
+    if [ -z "$container" ]; then
+        continue
+    fi
+    randkey="$(biphrost -b mkrand 'a-z0-9' 32)"
+    echo "$randkey" > /home/"$container"/.biphrost-domain-verification && chmod 0644 /home/"$container"/.biphrost-domain-verification
+    response="$(curl -fkL -m 5 --doh-url 'https://doh.mullvad.net/dns-query' "$hostname"/.well-known/biphrost-domain-verification 2>/dev/null)"
+    if [ "$randkey" = "$response" ]; then
+        echo "$hostname"
+    fi
+    rm /home/"$container"/.biphrost-domain-verification
+done
+```
