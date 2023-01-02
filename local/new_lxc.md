@@ -173,6 +173,14 @@ if [ -z "$copy_from" ]; then
 fi
 ```
 
+**Done**
+```bash
+echo "Created $container ($nextip)"
+```
+
+
+# TODO
+
 **Repair cloned containers**
 If a container has been cloned from another container, some tidying-up needs to be done to get everything back in order.
 ```todo
@@ -180,11 +188,7 @@ service php-* stop
 usermod -l lxc0007 -d /home/lxc0007 -m lxc0001
 ```
 
-# TODO
-
 Apparently I didn't record a per-site nginx configuration here before nuking all of the servers running this configuration. Oops. A new nginx site config will need to be put together.
-
-Also review [Common Nginx misconfigurations that leave your web server open to attack](https://news.ycombinator.com/item?id=26259955) and ensure all those landmines are avoided.
 
 `/home/lxcNNNN/ssl` directory needs to be cleaned up after a container is cloned from another container.
 
