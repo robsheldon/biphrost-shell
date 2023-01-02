@@ -19,8 +19,8 @@ fi
 if apt-get upgrade -y </dev/null; then
     echo 'Installed package updates'
 fi
-if apt install -y patch sudo openssh-server git </dev/null; then
-    echo 'Installed patch, sudo, sshd, and git'
+if apt install -y patch sudo rsync openssh-server git </dev/null; then
+    echo 'Installed patch, sudo, rsync, sshd, and git'
 fi
 ```
 
@@ -52,7 +52,6 @@ localedef -i en_US -f UTF-8 en_US.UTF-8
 **Set some defaults for the root account**
 ```bash
 update-alternatives --set editor /usr/bin/vim.basic
-echo 'syntax off' > ~/.vimrc
 ```
 
 **Create the LXC user inside the container**
@@ -64,5 +63,4 @@ touch "/home/$label/.ssh/authorized_keys"
 chown -R "$label":"$label" "/home/$label/.ssh"
 chmod 0750 "/home/$label/.ssh"
 chmod 0640 "/home/$label/.ssh/authorized_keys"
-EOF
 ```
