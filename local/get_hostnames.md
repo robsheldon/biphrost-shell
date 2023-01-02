@@ -42,7 +42,7 @@ fi
 **If --verify, then verify each hostname in the nginx configuration**
 ```bash
 for hostname in "${hostnames[@]}"; do
-    container="$(grep -l "^\\s*server_name\\s*.*\\b$hostname\\b" /etc/nginx/sites-enabled/* | xargs basename 2>/dev/null)"
+    container="$(grep -l "^\\s*server_name\\s*.*\\s$hostname\\(\\s\\|;\\)" /etc/nginx/sites-enabled/* | xargs basename 2>/dev/null)"
     if [ -z "$container" ]; then
         continue
     fi
