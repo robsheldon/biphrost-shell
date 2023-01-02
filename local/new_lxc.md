@@ -151,6 +151,7 @@ else
     # shellcheck disable=SC2206
     default_names=($hostnames)
 fi
+default_names+=("$container")
 default_names+=("localhost")
 # shellcheck disable=SC2086
 sudo biphrost @$container init network --hostnames "${default_names[*]}"
