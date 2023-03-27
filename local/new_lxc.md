@@ -117,21 +117,6 @@ sudo loginctl enable-linger "$container"
 sudo -u "$container" XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" sh -c 'id -u')" sh -c "systemctl --user enable $container-autostart"
 ```
 
-**Add a knockd entry for this container**
-```bash
-{ read -r knock1; read -r knock2; read -r knock3; } < <(tr -dc '0-9' </dev/urandom | head -c 1000 | grep -o '[2-8][0-9][0-9][0-9]' | head -n 3)
-cat <<EOF | sudo tee -a /etc/knockd.conf >/dev/null
-
-[$container]
-    sequence      = $knock1:udp,$knock2:udp,$knock3:udp
-    seq_timeout   = 10
-    cmd_timeout   = 5
-    start_command = /usr/sbin/iptables -t nat -A PREROUTING -p tcp -s %IP% --dport 22 -j DNAT --to-destination $nextip:22
-    stop_command  = /usr/sbin/iptables -t nat -D PREROUTING -p tcp -s %IP% --dport 22 -j DNAT --to-destination $nextip:22
-EOF
-sudo service knockd restart
-```
-
 **Start the container**
 Note: This command changed from "lxc-start" to "lxc-unpriv-start" in Debian 11 (Buster). Running "lxc-start" causes an incomprehensible error message on unprivileged accounts. Yay.
 ```bash
