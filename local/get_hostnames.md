@@ -9,16 +9,16 @@ if loadopt "all" >/dev/null; then
     container="*"
 else
     if [ $# -lt 1 ]; then
-        fail ""
+        fail "No container ID given"
     fi
     if ! [[ "$1" =~ ^lxc[0-9]{4}$ ]]; then
-        fail ""
+        fail "Invalid container ID"
     fi
     if [ ! -f /etc/nginx/sites-enabled/"$1" ]; then
-        fail ""
+        fail "No nginx configuration found for $1"
     fi
     if [ ! -d /home/"$1" ]; then
-        fail ""
+        fail "No homedir found for $1"
     fi
     container="$1"
 fi
