@@ -26,6 +26,14 @@ dbuser="$dbname"
 dbpass="$(random_string)"
 ```
 
+**Tune MySQL**
+A number of themes and plugins have some amazingly bad database queries built in to them: nested joins on large tables with no indexes, for example. These queries can run for a long time (minutes to hours), much longer than a WordPress page load, and gradually accumulate until MySQL consumes all available CPU and memory resources. We can prevent the resource exhaustion by imposing a reasonable query execution time limit in the MySQL configuration.
+```bash
+grep -qE '^#*\s*max_statement_time\s*=' /etc/mysql/conf.d/mysql.cnf || echo 'max_statement_time        = 30' | sudo tee -a /etc/mysql/conf.d/mysql.cnf >/dev/null
+sudo sed -i 's/^#*\s*max_statement_time\s*.*$/max_statement_time        = 30/' /etc/mysql/conf.d/mysql.cnf
+sudo service mysql restart && sleep 1
+```
+
 **Create the MySQL database**
 Annoyingly, in MySQL "ALL PRIVILEGES" doesn't actually include all privileges, and the grant command can't be one-liner'd without causing an error. In WordPress's case, the privileges need to be global anyway.
 ```bash
@@ -47,6 +55,7 @@ fi
 ```
 
 **Create the WordPress configuration file**
+TODO: This `sedstr` pattern is a holdover from a much older approach where I was struggling to get `sed` to play nice. I should clean this up.
 ```bash
 sudo mv "$site_root/wp-config-sample.php" "$site_root/wp-config.php"
 sedstr="s/^define\\(\\s*'DB_NAME'.*$/define\\('DB_NAME', '$dbname'\\);/g"
