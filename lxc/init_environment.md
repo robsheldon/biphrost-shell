@@ -10,16 +10,16 @@ label="$(needopt label -m '^lxc[0-9]{4}$')"
 
 **Update packages, install some common requirements**
 ```bash
-if apt purge -y joe </dev/null; then
+if apt-get -y purge joe >/dev/null; then
     echo 'Removed joe'
 fi
-if apt-get update </dev/null; then
+if apt-get -y update >/dev/null; then
     echo 'Retrieved package updates'
 fi
-if apt-get upgrade -y </dev/null; then
+if apt-get -y upgrade >/dev/null; then
     echo 'Installed package updates'
 fi
-if apt install -y patch sudo rsync openssh-server git </dev/null; then
+if apt-get -y install patch sudo rsync openssh-server git >/dev/null; then
     echo 'Installed patch, sudo, rsync, sshd, and git'
 fi
 ```
@@ -33,9 +33,9 @@ hostname -F /etc/hostname
 **Configure sshd**
 ```bash
 # shellcheck disable=SC2086
-sed -i 's/^#*\s*PermitRootLogin.*$/PermitRootLogin no\nAllowGroups '$label'/g' /etc/ssh/sshd_config
-sed -i 's/^#*\s*X11Forwarding.*$/X11Forwarding no/g' /etc/ssh/sshd_config
-sed -i 's/^#*\s*PasswordAuthentication.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
+sed -i 's/^#*\s*PermitRootLogin\s\+.*$/PermitRootLogin no\nAllowGroups '$label'/g' /etc/ssh/sshd_config
+sed -i 's/^#*\s*X11Forwarding\s\+.*$/X11Forwarding no/g' /etc/ssh/sshd_config
+sed -i 's/^#*\s*PasswordAuthentication\s\+.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
 if ! sshd -t; then
     echo "Error updating sshd configuration in $label"
     exit 1
@@ -50,8 +50,10 @@ localedef -i en_US -f UTF-8 en_US.UTF-8
 ```
 
 **Set some defaults for the root account**
+vim.basic has some problems in some terminal environments that you really don't want to have to troubleshoot as root.
 ```bash
-update-alternatives --set editor /usr/bin/vim.basic
+update-alternatives --set editor /usr/bin/vim.tiny
+update-alternatives --set vi /usr/bin/vim.tiny
 ```
 
 **Create the LXC user inside the container**

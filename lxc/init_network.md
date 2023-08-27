@@ -12,7 +12,7 @@ First, disable systemd's takeover of the network stack. systemd's configuration 
 ```bash
 systemctl stop systemd-resolved systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online >/dev/null
 systemctl disable systemd-resolved.service systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online >/dev/null
-apt -y purge dhcpcd5 isc-dhcp-client isc-dhcp-common >/dev/null
+apt-get -y purge dhcpcd5 isc-dhcp-client isc-dhcp-common >/dev/null
 rm -f /etc/resolv.conf
 ```
 

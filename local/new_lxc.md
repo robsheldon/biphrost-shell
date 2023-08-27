@@ -10,14 +10,20 @@ copy_from="$(loadopt "copy")"
 hostnames="$(loadopt "hostnames")"
 ```
 
+**Start the log**
+```bash
+echo "$(date +'%T')" "$(date +'%F')" "Creating a new LXC container"
+```
+
 **Create the unprivileged lxc user**
 This scans the host system for existing lxc users and generates a new lxc username, and then creates the user.
 * The `10#` in the arithmetic function forces bash to interpret the value in base 10. Otherwise, values > 7 with leading zeros are interpreted as octals. That's a fun bug that blows up a whole lot of things.
 * If /usr/local/sbin/lxc_login is being used to juggle inbound ssh connections, then the shell needs to be changed to `/usr/bin/bash`.
 ```bash
 container=$(printf 'lxc%04d' $(( 10#"$(echo 'lxc0000' | cat - /etc/passwd | grep -Po '(?<=^lxc)[0-9]+' | sort -r | head -n 1)" + 1)))
-sudo adduser --disabled-login --shell /usr/bin/false --quiet --gecos "" "$container"
-sudo usermod -a -G lxcusers "$container"
+echo "$(date +'%T')" "Container will be $container"
+sudo adduser --disabled-login --shell /usr/bin/false --quiet --gecos "" "$container" >/dev/null 2>&1
+sudo usermod -a -G lxcusers "$container" >/dev/null 2>&1
 sudo mkdir -p "/home/$container/.config/lxc"
 sudo mkdir -p "/home/$container/.config/systemd/user"
 sudo mkdir -p "/home/$container/.ssh"
@@ -30,6 +36,7 @@ sudo chown -R "$container":"$container" "/home/$container"
 **Create the user's lxc config files**
 These values will get compiled by the `lxc-create` command into a container runtime config file in `/srv/lxc/$lxcusername/config`; if you need to mess about with a container's configuration without destroying and rebuilding it, then edit that file instead.
 ```bash
+echo "$(date +'%T')" "Creating config files"
 uidmap=$(sed -n "s/^$container:\\([0-9]\\+\\):\\([0-9]\\+\\)/\\1 \\2/p" /etc/subuid)
 gidmap=$(sed -n "s/^$container:\\([0-9]\\+\\):\\([0-9]\\+\\)/\\1 \\2/p" /etc/subgid)
 cat <<EOF | sudo -u "$container" tee /home/"$container"/.config/lxc/default.conf >/dev/null
@@ -54,11 +61,12 @@ sudo setfacl -m u:"$hostuid":x /home/"$container"/.local/share
 # The following line figures out the next available IP address
 nextip="10.0.0.$(diff -u <(grep -Po '^10\.[0-9\.]+' /etc/hosts | cut -d '.' -f 4 | sort -n) <(seq 2 254) | grep -Po '(?<=^\+)[0-9]+$' | head -n 1)"
 echo "$nextip    $container" | sudo tee -a /etc/hosts >/dev/null
+echo "$(date +'%T')" "$container's local IP will be $nextip"
 ```
 
 **Configure networking for the container**
 ```bash
-cat <<EOF | sudo -u "$container" tee -a "/home/$container/.config/lxc/default.conf" >/dev/null
+cat <<EOF | sudo -u "$container" -- tee -a "/home/$container/.config/lxc/default.conf" >/dev/null
 lxc.net.0.flags = up
 lxc.net.0.ipv4.address = $nextip
 lxc.net.0.ipv4.gateway = auto
@@ -71,7 +79,8 @@ EOF
 If the `--copy` parameter was used, then copy an existing container instead of creating a new one. Copied containers need file ownership fixed and their LXC config file updated. `-l INFO` is critical because `lxc-copy` will routinely fail without any output or debugging info otherwise.
 ```bash
 if [ -z "$copy_from" ]; then
-    sudo -u "$container" sh -c "lxc-create -t download -B btrfs -n $container -- -d debian -r bullseye -a amd64 --keyserver keyserver.ubuntu.com" && sleep 1
+    echo "$(date +'%T')" "Downloading image"
+    sudo -u "$container" -- lxc-create -t download -B btrfs -n "$container" -- -d debian -r bullseye -a amd64 --keyserver keyserver.ubuntu.com >/dev/null 2>&1 && sleep 1
 else
     uid_from_base=$(sed -n "s/^$copy_from:\\([0-9]\\+\\):\\([0-9]\\+\\)/\\1/p" /etc/subuid)
     gid_from_base=$(sed -n "s/^$copy_from:\\([0-9]\\+\\):\\([0-9]\\+\\)/\\1/p" /etc/subgid)
@@ -89,6 +98,7 @@ else
     done < <(find -P /srv/lxc/"$container"/rootfs/ -printf '%U %G %p\0')
     sudo sed -i -e "s/^lxc.idmap = u .*\$/lxc.idmap = u 0 $uidmap/g" -e "s/^lxc.idmap = g .*\$/lxc.idmap = g 0 $gidmap/g" -e "s/^lxc.net.0.ipv4.address = .*\$/lxc.net.0.ipv4.address = $nextip/g" /srv/lxc/"$container"/config
 fi
+lxc-ls --fancy
 ```
 
 **Create a systemd service file so that the container starts automatically on boot**
@@ -114,17 +124,20 @@ EOF
 ```bash
 sudo chown "$container:$container" "/home/$container/.config/systemd/user/$container-autostart.service"
 sudo loginctl enable-linger "$container"
-sudo -u "$container" XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" sh -c 'id -u')" sh -c "systemctl --user enable $container-autostart"
+sudo XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" -- id -u)" -u "$container" -- systemctl --user enable "$container-autostart"
+sudo XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" -- id -u)" -u "$container" -- systemctl --user start "$container-autostart"
 ```
 
 **Start the container**
 Note: This command changed from "lxc-start" to "lxc-unpriv-start" in Debian 11 (Buster). Running "lxc-start" causes an incomprehensible error message on unprivileged accounts. Yay.
 ```bash
-sudo -u "$container" sh -c "lxc-unpriv-start -n '$container'" && sleep 1
+echo "$(date +'%T')" "Starting $container"
+biphrost -b start "$container" || fail "Error starting $container"
 ```
 
 **Initialize the network inside the container**
 ```bash
+echo "$(date +'%T')" "Initializing network in $container"
 declare -a default_names
 if [ -z "$hostnames" ]; then
     default_names=()
@@ -139,18 +152,17 @@ fi
 default_names+=("$container")
 default_names+=("localhost")
 # shellcheck disable=SC2086
-sudo biphrost @$container init network --hostnames "${default_names[*]}"
-echo -e "Restarting $container..."
-sudo -u "$container" sh -c "lxc-stop -n '$container'" && sudo -u "$container" sh -c "lxc-unpriv-start -n '$container'" && echo " done."
+biphrost @$container init network --hostnames "${default_names[*]}"
 ```
 
 **Restart the container to ensure that the new network configuration starts cleanly**
 ```bash
-sudo -u "$container" sh -c "lxc-stop -n '$container'" && sleep 1
-sudo -u "$container" sh -c "lxc-unpriv-start -n '$container'" && sleep 1
+echo "$(date +'%T')" "Restarting $container"
+biphrost -b restart "$container"
 ```
 
 **Initialize the server environment inside the container**
+This step is skipped if the new container was copied from another container.
 ```bash
 if [ -z "$copy_from" ]; then
     # shellcheck disable=SC2086
@@ -160,7 +172,7 @@ fi
 
 **Done**
 ```bash
-echo "Created $container ($nextip)"
+echo "$(date +'%T')" "Successfully created $container ($nextip)"
 ```
 
 

@@ -19,7 +19,7 @@ lxcname="$1"
 shift
 ```
 
-**Make sure this is running an on lxchost**
+**Make sure this is running on an lxchost**
 ```bash
 if ! command -v lxc-destroy >/dev/null; then
     fail "lxc-destroy is not available; is this an LXC host?"
