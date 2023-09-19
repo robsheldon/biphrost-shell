@@ -98,7 +98,6 @@ else
     done < <(find -P /srv/lxc/"$container"/rootfs/ -printf '%U %G %p\0')
     sudo sed -i -e "s/^lxc.idmap = u .*\$/lxc.idmap = u 0 $uidmap/g" -e "s/^lxc.idmap = g .*\$/lxc.idmap = g 0 $gidmap/g" -e "s/^lxc.net.0.ipv4.address = .*\$/lxc.net.0.ipv4.address = $nextip/g" /srv/lxc/"$container"/config
 fi
-lxc-ls --fancy
 ```
 
 **Create a systemd service file so that the container starts automatically on boot**
