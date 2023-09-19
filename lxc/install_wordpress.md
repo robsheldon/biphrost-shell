@@ -46,43 +46,20 @@ FLUSH PRIVILEGES;
 EOF
 ```
 
-**Download the latest version of WordPress**
+**Install wp-cli**
 ```bash
-wget -O - https://wordpress.org/latest.tar.gz | sudo tar -xz -C "$site_root" --strip-components=1
-if [ ! -f "$site_root/wp-config-sample.php" ]; then
-    fail "The Wordpress download seems to have failed; wp-config-sample.php was not found in $site_root"
-fi
+wget -O - https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar | sudo tee /usr/local/bin/wp >/dev/null
+sudo chmod 0755 /usr/local/bin/wp
 ```
 
-**Create the WordPress configuration file**
-TODO: This `sedstr` pattern is a holdover from a much older approach where I was struggling to get `sed` to play nice. I should clean this up.
+**Download and configure the latest version of WordPress**
 ```bash
-sudo mv "$site_root/wp-config-sample.php" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'DB_NAME'.*$/define\\('DB_NAME', '$dbname'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'DB_USER'.*$/define\\('DB_USER', '$dbuser'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'DB_PASSWORD'.*$/define\\('DB_PASSWORD', '$dbpass'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'AUTH_KEY',.*$/define\\('AUTH_KEY',         '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'SECURE_AUTH_KEY',.*$/define\\('SECURE_AUTH_KEY',  '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'LOGGED_IN_KEY',.*$/define\\('LOGGED_IN_KEY',    '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'NONCE_KEY',.*$/define\\('NONCE_KEY',        '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'AUTH_SALT',.*$/define\\('AUTH_SALT',        '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'SECURE_AUTH_SALT',.*$/define\\('SECURE_AUTH_SALT', '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'LOGGED_IN_SALT',.*$/define\\('LOGGED_IN_SALT',   '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
-sedstr="s/^define\\(\\s*'NONCE_SALT',.*$/define\\('NONCE_SALT',       '$(random_string 64)'\\);/g"
-sudo sed -i -r -e "$sedstr" "$site_root/wp-config.php"
+wp core download --path="$site_root"
+wp core config --dbhost="localhost" --dbname="$dbname" --dbuser="$dbuser" --dbpass="$dbpass" --path="$site_root"
+chmod 0600 "$site_root/wp-config.php"
 ```
 
-**Finally, set the proper ownership on everything in this directory.**
+**Set the proper ownership on everything in this directory.**
 ```bash
 sudo chown -R "$owner":"$group" "$site_root"
 ```

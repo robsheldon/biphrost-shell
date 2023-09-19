@@ -23,6 +23,7 @@ This uses a different approach to finding php-related services than the one abov
 ```bash
 while read -r service; do
     sudo systemctl stop "$service"
+    sudo systemctl disable "$service"
 done < <(grep -sl '^\s*#\?\s*ExecStart=[a-zA-Z0-9._/-]\+/php-fpm[0-9.]\+\s\+' /etc/systemd/system/*)
 ```
 
@@ -37,7 +38,7 @@ sudo apt-get -y remove php* >/dev/null 2>&1
 **Use packages from [[ https://deb.sury.org/ | sury.org ]]:**
 ```bash
 sudo apt-get -y install wget ca-certificates apt-transport-https gnupg >/dev/null
-sudo wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+sudo wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && sudo chmod 0644 /etc/apt/trusted.gpg.d/php.gpg
 os_release=$(dpkg --status tzdata | grep Provides | cut -f2 -d'-')
 echo "deb https://packages.sury.org/php/ $os_release main" | sudo tee /etc/apt/sources.list.d/php.list
 ```
