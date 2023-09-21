@@ -46,7 +46,7 @@ echo "$public_key" | sudo -u "$container" lxc-unpriv-attach -n "$container" -e -
 if grep -oq '^\['"$container"'\]$' /etc/knockd.conf; then
     read -r knock1 knock2 knock3 <<< "$(grep -A5 "$container" /etc/knockd.conf | grep -Po '([0-9]+:udp,?)*' | grep -Po '[0-9]+' | tr -dc '0-9\n' | grep -Po '[0-9 ]+' | tr '\n' ' ')"
 else
-    lxcip="$(grep "\\b$container$\\b" /etc/hosts | grep -oE '([0-9.]+){3}\.[0-9]+(?\b)')"
+    lxcip="$(grep "\\b$container\\b" /etc/hosts | grep -oE '([0-9.]+){3}\.[0-9]+(?\b)')"
     { read -r knock1; read -r knock2; read -r knock3; } < <(tr -dc '0-9' </dev/urandom | head -c 1000 | grep -o '[2-8][0-9][0-9][0-9]' | head -n 3)
     cat <<EOF | sudo tee -a /etc/knockd.conf >/dev/null
 

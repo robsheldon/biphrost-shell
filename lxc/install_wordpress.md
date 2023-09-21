@@ -54,8 +54,8 @@ sudo chmod 0755 /usr/local/bin/wp
 
 **Download and configure the latest version of WordPress**
 ```bash
-wp core download --path="$site_root"
-wp core config --dbhost="localhost" --dbname="$dbname" --dbuser="$dbuser" --dbpass="$dbpass" --path="$site_root"
+wp core download --path="$site_root" --allow-root
+wp core config --dbhost="localhost" --dbname="$dbname" --dbuser="$dbuser" --dbpass="$dbpass" --path="$site_root" --allow-root
 chmod 0600 "$site_root/wp-config.php"
 ```
 
