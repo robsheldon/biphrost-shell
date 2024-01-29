@@ -29,7 +29,7 @@ done < <(grep -sl '^\s*#\?\s*ExecStart=[a-zA-Z0-9._/-]\+/php-fpm[0-9.]\+\s\+' /e
 
 **Remove any existing php installations**
 ```bash
-sudo apt-get -y remove php* >/dev/null 2>&1
+sudo apt-get -y remove 'php*' >/dev/null 2>&1
 ```
 
 
@@ -55,10 +55,7 @@ fi
 **Install PHP packages**
 ```bash
 case "$php_version" in
-    8.1)
-        sudo apt-get -y install php"$php_version"-{cgi,cli,fpm,bcmath,common,ctype,curl,exif,fileinfo,gd,gmp,imagick,imap,intl,ldap,mbstring,mysql,mysqlnd,opcache,pdo,pgsql,readline,soap,tidy,tokenizer,xml,xmlrpc,zip} >/dev/null || fail "sudo apt -y install [php packages...]"
-        ;;
-    8.0)
+    8.*)
         sudo apt-get -y install php"$php_version"-{cgi,cli,fpm,bcmath,common,ctype,curl,exif,fileinfo,gd,gmp,imagick,imap,intl,ldap,mbstring,mysql,mysqlnd,opcache,pdo,pgsql,readline,soap,tidy,tokenizer,xml,xmlrpc,zip} >/dev/null || fail "sudo apt -y install [php packages...]"
         ;;
     7.1)
