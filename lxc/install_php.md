@@ -56,13 +56,13 @@ fi
 ```bash
 case "$php_version" in
     8.*)
-        sudo apt-get -y install php"$php_version"-{cgi,cli,fpm,bcmath,common,ctype,curl,exif,fileinfo,gd,gmp,imagick,imap,intl,ldap,mbstring,mysql,mysqlnd,opcache,pdo,pgsql,readline,soap,tidy,tokenizer,xml,xmlrpc,zip} >/dev/null || fail "sudo apt -y install [php packages...]"
+        sudo apt-get -y install php"$php_version"-{cgi,cli,fpm,bcmath,common,ctype,curl,exif,fileinfo,gd,gmp,imagick,imap,intl,ldap,mbstring,mysql,mysqlnd,opcache,pdo,pgsql,readline,soap,sqlite3,tidy,tokenizer,xml,xmlrpc,zip} >/dev/null || fail "sudo apt -y install [php packages...]"
         ;;
     7.1)
         sudo apt-get -y install php"$php_version"-{cgi,cli,fpm,bcmath,common,ctype,curl,exif,fileinfo,gd,gmp,imagick,imap,intl,json,ldap,mbstring,mcrypt,mysql,mysqlnd,opcache,pdo,pgsql,readline,soap,tidy,tokenizer,xml,xmlrpc,zip} >/dev/null || fail "sudo apt -y install [php packages...]"
         ;;
     *)
-        sudo apt-get -y install php"$php_version"-{cgi,cli,fpm,bcmath,common,ctype,curl,exif,fileinfo,gd,gmp,imagick,imap,intl,json,ldap,mbstring,mysql,mysqlnd,opcache,pdo,pgsql,readline,soap,tidy,tokenizer,xml,xmlrpc,zip} >/dev/null || fail "sudo apt -y install [php packages...]"
+        sudo apt-get -y install php"$php_version"-{cgi,cli,fpm,bcmath,common,ctype,curl,exif,fileinfo,gd,gmp,imagick,imap,intl,json,ldap,mbstring,mysql,mysqlnd,opcache,pdo,pgsql,readline,soap,sqlite3,tidy,tokenizer,xml,xmlrpc,zip} >/dev/null || fail "sudo apt -y install [php packages...]"
         ;;
 esac
 echo "Installed PHP $php_version packages"
