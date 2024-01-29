@@ -10,8 +10,8 @@ label="$(needopt label -m '^lxc[0-9]{4}$')"
 
 **Update packages, install some common requirements**
 ```bash
-if apt-get -y purge joe >/dev/null; then
-    echo 'Removed joe'
+if apt-get -y joe purge gcc-9-base libavahi* >/dev/null && apt-get -y autoremove; then
+    echo 'Removed cruft'
 fi
 if apt-get -y update >/dev/null; then
     echo 'Retrieved package updates'
@@ -19,8 +19,8 @@ fi
 if apt-get -y upgrade >/dev/null; then
     echo 'Installed package updates'
 fi
-if apt-get -y install patch sudo rsync openssh-server git >/dev/null; then
-    echo 'Installed patch, sudo, rsync, sshd, and git'
+if apt-get -y install apt-utils patch sudo rsync openssh-server git >/dev/null; then
+    echo 'Installed apt-utils, patch, sudo, rsync, sshd, and git'
 fi
 ```
 
