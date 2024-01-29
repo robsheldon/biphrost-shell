@@ -53,13 +53,17 @@ sudo chmod 0755 /usr/local/bin/wp
 ```
 
 **Download and configure the latest version of WordPress**
+Because of https://github.com/wp-cli/config-command/issues/141 (and the first bug report on this, way back in 2017, getting [dismissed](https://github.com/wp-cli/config-command/issues/31)), a `cd` command is required instead of using `--path` with `wp`.
+...and then, of course, `cd` needs to be followed with a `|| fail`, because bash and shellcheck and barf.
 ```bash
 wp core download --path="$site_root" --allow-root
-wp core config --dbhost="localhost" --dbname="$dbname" --dbuser="$dbuser" --dbpass="$dbpass" --path="$site_root" --allow-root
-chmod 0600 "$site_root/wp-config.php"
+cd "$site_root" || fail "cd \"$site_root\""
+wp core config --dbhost="localhost" --dbname="$dbname" --dbuser="$dbuser" --dbpass="$dbpass" --allow-root
 ```
 
-**Set the proper ownership on everything in this directory.**
+**Set the proper ownership and permissions on everything in this directory**
 ```bash
+sudo find "$site_root" -type d -exec chmod 0750 '{}' \;
+sudo find "$site_root" -type f -exec chmod 0640 '{}' \;
 sudo chown -R "$owner":"$group" "$site_root"
 ```
