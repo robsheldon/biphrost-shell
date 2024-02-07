@@ -10,7 +10,7 @@ label="$(needopt label -m '^lxc[0-9]{4}$')"
 
 **Update packages, install some common requirements**
 ```bash
-if apt-get -y joe purge gcc-9-base libavahi* >/dev/null && apt-get -y autoremove; then
+if apt-get -y purge joe purge gcc-9-base libavahi* >/dev/null && apt-get -y autoremove; then
     echo 'Removed cruft'
 fi
 if apt-get -y update >/dev/null; then
