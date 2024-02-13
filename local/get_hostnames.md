@@ -48,7 +48,7 @@ for hostname in "${hostnames[@]}"; do
     fi
     randkey="$(biphrost -b mkrand 'a-z0-9' 32)"
     echo "$randkey" > /home/"$container"/.biphrost-domain-verification && chmod 0644 /home/"$container"/.biphrost-domain-verification
-    response="$(curl -fkL -m 5 --doh-url 'https://doh.mullvad.net/dns-query' "$hostname"/.well-known/biphrost-domain-verification 2>/dev/null)"
+    response="$(curl -fkL -m 5 --dns-servers 1.1.1.1,4.4.4.4 "$hostname"/.well-known/biphrost-domain-verification 2>/dev/null)"
     if [ "$randkey" = "$response" ]; then
         echo "$hostname"
     fi
