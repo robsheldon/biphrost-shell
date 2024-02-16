@@ -10,12 +10,12 @@ label="$(needopt label -m '^lxc[0-9]{4}$')"
 
 **Start the log**
 ```bash
-echo "$(date +'%T')" "$(date +'%F')" "Initializing $label"
+echo "$(date +'%T')" "$(date +'%F')" "Initializing operating system environment in $label"
 ```
 
 **Update packages, install some common requirements**
 ```bash
-if apt-get -y purge joe purge gcc-9-base libavahi* >/dev/null && apt-get -y autoremove; then
+if apt-get -y purge joe gcc-9-base libavahi* >/dev/null && apt-get -y autoremove >/dev/null; then
     echo "$(date +'%T') Removed cruft"
 fi
 if apt-get -y update >/dev/null; then
@@ -47,17 +47,11 @@ fi
 service ssh restart
 ```
 
-**Set the timezone and locale**
-```bash
-timedatectl set-timezone America/Los_Angeles
-localedef -i en_US -f UTF-8 en_US.UTF-8
-```
-
 **Set some defaults for the root account**
 vim.basic has some problems in some terminal environments that you really don't want to have to troubleshoot as root.
 ```bash
-update-alternatives --set editor /usr/bin/vim.tiny
-update-alternatives --set vi /usr/bin/vim.tiny
+update-alternatives --set editor /usr/bin/vim.basic
+update-alternatives --set vi /usr/bin/vim.basic
 ```
 
 **Create the LXC user inside the container**

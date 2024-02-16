@@ -8,10 +8,22 @@ This must be done before packages are downloaded and installed, otherwise networ
 hostnames="$(needopt hostnames)"
 ```
 
-First, disable systemd's takeover of the network stack. systemd's configuration changes frequently and it doesn't provide any benefits for hosting containers. See also https://www.naut.ca/blog/2018/12/12/disabling-systemd-networking/
+**Start the log**
 ```bash
-systemctl stop systemd-resolved systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online >/dev/null
-systemctl disable systemd-resolved.service systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online >/dev/null
+echo "$(date +'%T')" "$(date +'%F')" "Configuring network. Hostnames: $hostnames"
+```
+
+**Set the timezone and locale**
+We do this here because network initialization happens before environment initialization (hard to get package updates before configuring the network), and because we want consistent timestamps in the setup log. This *should* be a fairly safe command to run before starting the log...
+```bash
+timedatectl set-timezone America/Los_Angeles
+localedef -i en_US -f UTF-8 en_US.UTF-8
+```
+
+Disable systemd's takeover of the network stack. systemd's configuration changes frequently and it doesn't provide any benefits for hosting containers. See also https://www.naut.ca/blog/2018/12/12/disabling-systemd-networking/
+```bash
+systemctl stop systemd-resolved systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online >/dev/null 2>&1
+systemctl disable systemd-resolved.service systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online >/dev/null 2>&1
 apt-get -y purge dhcpcd5 isc-dhcp-client isc-dhcp-common >/dev/null
 rm -f /etc/resolv.conf
 ```
@@ -58,6 +70,9 @@ chmod 0644 /etc/resolv.conf
 
 
 **NOTE: CONTAINER MUST BE RESTARTED FOR CHANGES TO TAKE EFFECT**
+```bash
+echo "$(date +'%T') Network configured. Container needs to be restarted."
+```
 
 
 ## TODO
