@@ -8,19 +8,24 @@ This must be run *after* the network is configured and up (because `apt upgrade`
 label="$(needopt label -m '^lxc[0-9]{4}$')"
 ```
 
+**Start the log**
+```bash
+echo "$(date +'%T')" "$(date +'%F')" "Initializing $label"
+```
+
 **Update packages, install some common requirements**
 ```bash
 if apt-get -y purge joe purge gcc-9-base libavahi* >/dev/null && apt-get -y autoremove; then
-    echo 'Removed cruft'
+    echo "$(date +'%T') Removed cruft"
 fi
 if apt-get -y update >/dev/null; then
-    echo 'Retrieved package updates'
+    echo "$(date +'%T') Retrieved package updates"
 fi
 if apt-get -y upgrade >/dev/null; then
-    echo 'Installed package updates'
+    echo "$(date +'%T') Installed package updates"
 fi
 if apt-get -y install apt-utils patch sudo rsync openssh-server git >/dev/null; then
-    echo 'Installed apt-utils, patch, sudo, rsync, sshd, and git'
+    echo "$(date +'%T') Installed apt-utils, patch, sudo, rsync, sshd, and git"
 fi
 ```
 
@@ -37,8 +42,7 @@ sed -i 's/^#*\s*PermitRootLogin\s\+.*$/PermitRootLogin no\nAllowGroups '$label'/
 sed -i 's/^#*\s*X11Forwarding\s\+.*$/X11Forwarding no/g' /etc/ssh/sshd_config
 sed -i 's/^#*\s*PasswordAuthentication\s\+.*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
 if ! sshd -t; then
-    echo "Error updating sshd configuration in $label"
-    exit 1
+    fail "$(date +'%T') Error updating sshd configuration in $label"
 fi
 service ssh restart
 ```
