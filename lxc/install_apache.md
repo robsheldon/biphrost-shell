@@ -4,6 +4,11 @@
 echo "Installing Apache"
 ```
 
+**Start the log**
+```bash
+echo "$(date +'%T')" "$(date +'%F')" "Installing Apache"
+```
+
 ## Install and Configure Apache
 
 **Create the `/srv/www` directory**
@@ -91,29 +96,26 @@ You probably don't want the access.log and error.log files for all your sites to
 ```bash
 cat <<'EOF' | sudo tee /etc/logrotate.d/websites
 /srv/www/*/logs/*.log {
-        daily
-        missingok
-        rotate 14
-        compress
-        delaycompress
-        dateext
-        notifempty
-        create 600 root root
-        sharedscripts
-        postrotate
-                if /etc/init.d/apache2 status > /dev/null ; then \
-                    service apache2 graceful > /dev/null; \
-                fi;
-        endscript
-        prerotate
-                if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
-                        run-parts /etc/logrotate.d/httpd-prerotate; \
-                fi; \
-        endscript
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    dateext
+    notifempty
+    create 600 root root
+    sharedscripts
+    postrotate
+        if /etc/init.d/apache2 status >/dev/null; then
+            service apache2 graceful >/dev/null
+        fi
+    endscript
+    prerotate
+        if [ -d /etc/logrotate.d/httpd-prerotate ]; then
+            run-parts /etc/logrotate.d/httpd-prerotate
+        fi
+    endscript
 }
 EOF
 ```
 
-**Create a site config file**
-From here, a default site should be created to redirect requests that don't match a hosted name.
-TODO.
