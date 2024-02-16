@@ -8,6 +8,14 @@ This must be run *after* the network is configured and up (because `apt upgrade`
 label="$(needopt label -m '^lxc[0-9]{4}$')"
 ```
 
+**Set the timezone and locale**
+This is already done in `init network`, but... that doesn't seem to survive a container restart? Hmmm.
+We do this here because we want consistent timestamps in the setup log. This *should* be a fairly safe command to run before starting the log...
+```bash
+timedatectl set-timezone America/Los_Angeles
+localedef -i en_US -f UTF-8 en_US.UTF-8
+```
+
 **Start the log**
 ```bash
 echo "$(date +'%T')" "$(date +'%F')" "Initializing operating system environment in $label"

@@ -123,8 +123,8 @@ EOF
 ```bash
 sudo chown "$container:$container" "/home/$container/.config/systemd/user/$container-autostart.service"
 sudo loginctl enable-linger "$container"
-sudo XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" -- id -u)" -u "$container" -- systemctl --user enable "$container-autostart"
-sudo XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" -- id -u)" -u "$container" -- systemctl --user start "$container-autostart"
+sudo -u "$container" XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" -- id -u)" -- systemctl --user enable "$container-autostart"
+sudo -u "$container" XDG_RUNTIME_DIR="/run/user/$(sudo -u "$container" -- id -u)" -- systemctl --user start "$container-autostart"
 ```
 
 **Start the container**

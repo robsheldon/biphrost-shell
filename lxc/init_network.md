@@ -8,16 +8,16 @@ This must be done before packages are downloaded and installed, otherwise networ
 hostnames="$(needopt hostnames)"
 ```
 
-**Start the log**
-```bash
-echo "$(date +'%T')" "$(date +'%F')" "Configuring network. Hostnames: $hostnames"
-```
-
 **Set the timezone and locale**
 We do this here because network initialization happens before environment initialization (hard to get package updates before configuring the network), and because we want consistent timestamps in the setup log. This *should* be a fairly safe command to run before starting the log...
 ```bash
 timedatectl set-timezone America/Los_Angeles
 localedef -i en_US -f UTF-8 en_US.UTF-8
+```
+
+**Start the log**
+```bash
+echo "$(date +'%T')" "$(date +'%F')" "Configuring network. Hostnames: $hostnames"
 ```
 
 Disable systemd's takeover of the network stack. systemd's configuration changes frequently and it doesn't provide any benefits for hosting containers. See also https://www.naut.ca/blog/2018/12/12/disabling-systemd-networking/
