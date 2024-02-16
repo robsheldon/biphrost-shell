@@ -32,8 +32,8 @@ fi
 if apt-get -y upgrade >/dev/null; then
     echo "$(date +'%T') Installed package updates"
 fi
-if apt-get -y install apt-utils patch sudo rsync openssh-server git >/dev/null; then
-    echo "$(date +'%T') Installed apt-utils, patch, sudo, rsync, sshd, and git"
+if apt-get -y install apt-utils patch sudo rsync openssh-server git logrotate >/dev/null; then
+    echo "$(date +'%T') Installed apt-utils, patch, sudo, rsync, sshd, git, and logrotate"
 fi
 ```
 
