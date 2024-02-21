@@ -53,6 +53,7 @@ fi
 ```
 
 **Install PHP packages**
+Per [the official documentation](https://github.com/oerdnj/deb.sury.org/wiki/Frequently-Asked-Questions#install-php-package-without-apache2-requirement), avoid installing `php"$php_version"` (bare package name, without `-cgi`, `-cli`, etc.), because that adds Apache as a dependency, which might not be needed in all runtime environments.
 ```bash
 case "$php_version" in
     8.*)
@@ -68,20 +69,6 @@ esac
 echo "Installed PHP $php_version packages"
 ```
 NOTE: mcrypt was removed in 7.2. Older applications may require it.
-
-**Disable the default php-fpm service**
-This configuration is intended to have a php-fpm pool configuration created for each individual site. However, a recent change was made to the php-fpm installation process that causes it to install and enable a default global php-fpm service, which prevents the pool services from starting properly later. So, it needs to be disabled.
-```bash
-if systemctl list-unit-files | grep -q "php$php_version-fpm\\.service"; then
-    sudo systemctl stop "php$php_version-fpm"
-    sudo systemctl disable "php$php_version-fpm"
-    unit_path="$(systemctl cat "php$php_version-fpm" 2>/dev/null | grep -oP '^#\s*\K/.*/php[0-9.]+-fpm.service')"
-    if [ -n "$unit_path" ] && [ -f "$unit_path" ]; then
-        sudo rm "$unit_path"
-    fi
-    sudo systemctl daemon-reload
-fi
-```
 
 **Install Composer**
 Adapted from the [official instructions](https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md).
@@ -104,11 +91,29 @@ sudo mv composer.phar /usr/local/bin/composer && sudo chown root:root /usr/local
 
 ## Cleanup
 
-**Copy and update fpm pool config files**
+**Disable the default php-fpm service**
+This configuration is intended to have a php-fpm pool configuration created for each individual site. However, a recent change was made to the php-fpm installation process that causes it to install and enable a default global php-fpm service, which prevents the pool services from starting properly later. So, it needs to be disabled.
 ```bash
-sudo cp /etc/php/*/fpm/pool.d/* "/etc/php/$php_version/fpm/pool.d/"
-# Fix the path to the listening socket, if present.
-sudo sed -i -e 's|^\(\s*;*\s*listen\s*=\s*[a-zA-Z0-9/_-]\+\)[0-9.]\+\(-fpm.*\)$|\1'"$php_version"'\2|' "/etc/php/$php_version/fpm/pool.d/*"
+if systemctl list-unit-files | grep -q "php$php_version-fpm\\.service"; then
+    sudo systemctl stop "php$php_version-fpm"
+    sudo systemctl disable "php$php_version-fpm"
+    unit_path="$(systemctl cat "php$php_version-fpm" 2>/dev/null | grep -oP '^#\s*\K/.*/php[0-9.]+-fpm.service')"
+    if [ -n "$unit_path" ] && [ -f "$unit_path" ]; then
+        sudo rm "$unit_path"
+    fi
+    sudo systemctl daemon-reload
+fi
+```
+
+**Copy and update fpm pool config files**
+We want to copy any php-fpm pool files that are *not* the default templates installed by the new version of php.
+```bash
+sudo find /etc/php/*/fpm/pool.d/ -type f | grep -v "/$php_version/" | xargs -I {} sudo cp {} "/etc/php/$php_version/fpm/pool.d/"
+```
+
+**Fix the path to the listening socket, if present.**
+```bash
+sudo sed -i -e 's|^\(\s*;*\s*listen\s*=\s*[a-zA-Z0-9/_-]\+\)[0-9]\.[0-9]\(-fpm.*\)$|\1'"$php_version"'\2|' "/etc/php/$php_version/fpm/pool.d/"*
 ```
 TODO: May need to modify these files slightly if options change between php versions.
 
@@ -131,14 +136,13 @@ for service in "${php_services[@]}"; do
 done
 ```
 
-**Update Apache site configuration files**
+**Update Apache site configuration files and restart Apache**
+...if Apache is installed.
 ```bash
-sudo sed -i -e 's|\(\(php\)\?[-_]\?\)[0-9.]*\(-fpm\)|\2'"$php_version"'\3|' /etc/apache2/sites-available/*
-```
-
-**Restart Apache**
-```bash
-sudo apachectl graceful
+if command -v apachectl >/dev/null; then
+    sudo sed -i -e 's|\(\(php\)\?[-_]\?\)[0-9.]*\(-fpm\)|\2'"$php_version"'\3|' /etc/apache2/sites-available/*
+    sudo apachectl graceful
+fi
 ```
 
 
