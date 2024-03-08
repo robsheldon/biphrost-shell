@@ -25,7 +25,7 @@ if command -v mysql >/dev/null; then
     for db in $(/usr/bin/mysql -NB -e 'SELECT SCHEMA_NAME AS db FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN("mysql", "information_schema", "performance_schema");'); do
         mkdir -p "/srv/db/$db/$timestamp"
         /usr/bin/mydumper -EGRNe -o "/srv/db/$db/$timestamp" -B "$db"
-        tar --remove-files -czvf "/srv/db/$db-$timestamp.tar.gz" "/srv/db/$db/$timestamp"
+        tar --remove-files -czvf "/srv/db/$db/$timestamp.sql.tar.gz" "/srv/db/$db/$timestamp"
     done
 fi
 ```
