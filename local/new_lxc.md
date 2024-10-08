@@ -150,8 +150,7 @@ else
 fi
 default_names+=("$container")
 default_names+=("localhost")
-# shellcheck disable=SC2086
-biphrost @$container init network --hostnames "${default_names[*]}"
+biphrost @"$container" init network --hostnames "${default_names[*]}"
 ```
 
 **Restart the container to ensure that the new network configuration starts cleanly**
@@ -164,8 +163,7 @@ biphrost -b restart "$container"
 This step is skipped if the new container was copied from another container.
 ```bash
 if [ -z "$copy_from" ]; then
-    # shellcheck disable=SC2086
-    sudo biphrost @$container init environment --label "$container"
+    sudo biphrost @"$container" init environment --label "$container"
 fi
 ```
 
