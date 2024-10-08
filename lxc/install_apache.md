@@ -1,9 +1,5 @@
 # Install Apache
 
-```bash
-echo "Installing Apache"
-```
-
 **Start the log**
 ```bash
 echo "$(date +'%T')" "$(date +'%F')" "Installing Apache"

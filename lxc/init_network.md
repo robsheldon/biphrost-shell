@@ -2,12 +2,6 @@
 
 This must be done before packages are downloaded and installed, otherwise networking is broken and everything falls over.
 
-**Parameters**
-* --hostnames: the default hostnames to be added to the container
-```bash
-hostnames="$(needopt hostnames)"
-```
-
 **Set the timezone and locale**
 We do this here because network initialization happens before environment initialization (hard to get package updates before configuring the network), and because we want consistent timestamps in the setup log. This *should* be a fairly safe command to run before starting the log...
 ```bash
@@ -17,7 +11,7 @@ localedef -i en_US -f UTF-8 en_US.UTF-8
 
 **Start the log**
 ```bash
-echo "$(date +'%T')" "$(date +'%F')" "Configuring network. Hostnames: $hostnames"
+echo "$(date +'%T')" "$(date +'%F')" "Configuring network."
 ```
 
 Disable systemd's takeover of the network stack. systemd's configuration changes frequently and it doesn't provide any benefits for hosting containers. See also https://www.naut.ca/blog/2018/12/12/disabling-systemd-networking/
@@ -47,15 +41,15 @@ source /etc/network/interfaces.d/*
 EOF
 ```
 
-Generate a default hosts file for the container. The hosts file will contain the container's hostname, if set.
+Generate a default hosts file for the container.
 ```bash
 cat <<EOF | tee /etc/hosts >/dev/null
 # IP4
-127.0.0.1          $hostnames
+127.0.0.1          localhost
 10.0.0.1           lxchost
 
 # IP6
-::1                $hostnames ip6-localhost ip6-loopback
+::1                ip6-localhost ip6-loopback
 ff02::1            ip6-allnodes
 ff02::2            ip6-allrouters
 
@@ -78,4 +72,3 @@ echo "$(date +'%T') Network configured. Container needs to be restarted."
 ## TODO
 
 * I'd like to not use Cloudflare DNS by default
-* There should probably be some sanity-checking done on the hostnames parameter

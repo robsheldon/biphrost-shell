@@ -22,7 +22,7 @@ Do a little additional processing.
 ```bash
 if [ -z "$status" ]; then
     echo "NOTFOUND"
-elif [ "$status" = "Failed to load config for lxc0007" ]; then
+elif [ "$status" = "Failed to load config for $container" ]; then
     echo "ERROR"
 else
     echo "$status"

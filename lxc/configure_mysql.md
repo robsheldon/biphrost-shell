@@ -71,6 +71,7 @@ socket                    = /var/run/mysqld/mysqld.sock
 datadir                   = /var/lib/mysql
 log-error                 = /var/log/mysql/error.log
 bind-address              = 127.0.0.1
+skip-networking           = 1
 skip_name_resolve
 skip_external_locking
 performance_schema        = off
@@ -90,6 +91,8 @@ join_buffer_size          = $join_buffer_size
 thread_stack              = $thread_stack
 EOF
 ```
+
+`skip-networking`: These environments are configured to connect to MySQL over the Unix socket, which is more performant. There's no need to connect over TCP, so we save a tiny bit of overhead here.
 
 `skip-name-resolve`: Name resolution is used on MySQL servers that are accessible by the internet, which is insane in modern terms. All MySQL instances should be protected by iptables and access should be limited to trusted networks only, so turn this feature off to save a possible DNS round trip for each connection. (Lookups are only done for connections //not// coming from localhost, supposedly, but there are any number of conditions where this behavior may not work as expected, so turn it off anyway.)
 

@@ -99,7 +99,7 @@ random_string () {
     else
         num_chars=$((12 + RANDOM % 12))
     fi
-    tr -dc _A-Z-a-z-0-9 < /dev/urandom | tr -d '/+oO0lLiI1\n\r' | head -c $num_chars
+    tr -dc _A-Z-a-z-0-9 < /dev/urandom | tr -d '/+oO0lLiI1\n\r' | head -c "$num_chars"
 }
 
 
@@ -115,7 +115,7 @@ warn () {
 # Write a message to stderr and exit immediately with a non-zero code.
 #
 fail () {
-    echo "ERROR: $*" | fmt -w 80 >&2
+    echo -e "ERROR: $*" >&2
     pkill -TERM -g $$ "$myname" || kill TERM $$ >/dev/null 2>&1
     exit 1
 }
@@ -187,7 +187,7 @@ ask () {
         warn "ask(): Non-zero timeout requires a default answer"
         exit 1
     fi
-    if [ $required -ne 0 ]; then
+    if [ "$required" -ne 0 ]; then
         if [ -n "$default" ] || [ "$timeout" -gt 0 ]; then
             warn "ask(): 'required' is not compatible with 'default' or 'timeout' parameters."
             exit 1
@@ -203,7 +203,7 @@ ask () {
         prompt="$prompt [Y/n] "
     elif [ "$default" = "n" ]; then
         prompt="$prompt [y/N] "
-    elif [ $required -eq 1 ]; then
+    elif [ "$required" -eq 1 ]; then
         prompt="$prompt (required) "
     else
         prompt="$prompt [y/n] "
@@ -224,13 +224,13 @@ ask () {
         else
             read -r -p "$prompt" ans <"$(tty)"
             if [[ ! "$ans" ]]; then
-                if [ $required -eq 1 ]; then
+                if [ "$required" -eq 1 ]; then
                     warn "An answer is required."
                     ans=""
                 else
                     ans=$default
                 fi
-            elif [ $required -eq 0 ]; then
+            elif [ "$required" -eq 0 ]; then
                 ans=$(tr '[:upper:]' '[:lower:]' <<< "$ans")
                 if [ "$ans" = "yes" ]; then
                     ans="y"
@@ -240,7 +240,7 @@ ask () {
             fi 
         fi
 
-        if [ $required -eq 0 ]; then
+        if [ "$required" -eq 0 ]; then
             if [ "$ans" != 'y' ] && [ "$ans" != 'n' ]; then
                 warn "Invalid answer. Please use y or n."
                 ans=""
@@ -248,7 +248,7 @@ ask () {
         fi
     done
 
-    if [ $required -eq 1 ]; then
+    if [ "$required" -eq 1 ]; then
         echo "$ans"
         return 0
     fi
@@ -264,22 +264,20 @@ ask () {
 #     if var="$(loadopt "foo")"; then...
 # 
 loadopt () {
-    local varname="$1" value=""
-    declare -i found=1
+    local varname="$1" value="" found=""
     # Run through the longopts array and search for a "varname".
     for i in "${longopts[@]}"; do
-        if [ $found -eq 0 ]; then
-            value="$i"
-            break
-        fi
-        if [ "$i" = "--$varname" ]; then
+        if [ -n "$found" ]; then
+            echo "$i"
+            return 0
+        elif [ "$i" = "--$varname" ]; then
             # Matched varname, set found here so that the next loop iteration
             # picks up varname's value.
-            found=0
+            found="$varname"
         fi
     done
-    echo "$value"
-    return $found
+    echo ""
+    [ -n "$found" ]
 }
 
 

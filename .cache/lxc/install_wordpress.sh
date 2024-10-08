@@ -115,7 +115,7 @@ warn () {
 # Write a message to stderr and exit immediately with a non-zero code.
 #
 fail () {
-    echo "ERROR: $*" | fmt -w 80 >&2
+    echo -e "ERROR: $*" >&2
     pkill -TERM -g $$ "$myname" || kill TERM $$ >/dev/null 2>&1
     exit 1
 }
@@ -264,22 +264,20 @@ ask () {
 #     if var="$(loadopt "foo")"; then...
 # 
 loadopt () {
-    local varname="$1" value=""
-    declare -i found=1
+    local varname="$1" value="" found=""
     # Run through the longopts array and search for a "varname".
     for i in "${longopts[@]}"; do
-        if [ $found -eq 0 ]; then
-            value="$i"
-            break
-        fi
-        if [ "$i" = "--$varname" ]; then
+        if [ -n "$found" ]; then
+            echo "$i"
+            return 0
+        elif [ "$i" = "--$varname" ]; then
             # Matched varname, set found here so that the next loop iteration
             # picks up varname's value.
-            found=0
+            found="$varname"
         fi
     done
-    echo "$value"
-    return $found
+    echo ""
+    [ -n "$found" ]
 }
 
 
