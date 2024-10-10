@@ -27,7 +27,8 @@ else
     target="$1"
 fi
 if [ -z "$target" ]; then
-    fail "[$myinvocation]: No container IDs were provided and no containers were found to update"
+    echo "$(date +'%T')" "$(date +'%F')" "[$myinvocation]: No container IDs were provided and no containers were found to update"
+    exit 0
 fi
 ```
 
