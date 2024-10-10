@@ -1,10 +1,17 @@
 # Return a list of hostnames for a container
 or all containers on the server with `--all`, and optionally verify them with `--verify`.
 
+**Sanity-check invocation**
+```bash
+myinvocation="hostnames get"
+if [ "${*:1:2}" != "$myinvocation" ]; then
+    fail "[$myinvocation]: Invalid invocation"
+fi
+shift; shift
+```
+
 **Validate container argument**
 ```bash
-[ "$1" = "get" ] && shift
-[ "$1" = "hostnames" ] && shift
 if loadopt "all" >/dev/null; then
     container="*"
 else
