@@ -47,7 +47,7 @@ if [ ! -d "/home/$target" ]; then
 fi
 ```
 
-**Ensure the ssl and acme-challenge directories exist.**
+**Ensure the `ssl`, `acme-challenge`, and related directories exist and are owned by the container user.**
 ```bash
 firstrun=0
 if [ ! -d "/home/$target/ssl" ]; then
@@ -55,6 +55,10 @@ if [ ! -d "/home/$target/ssl" ]; then
     mkdir -p "/home/$target/ssl"
 fi
 mkdir -p "/home/$target/acme-challenge"
+chown -R "$target":"$target" "/home/$target/acme-challenge"
+chown -R "$target":"$target" "/home/$target/accounts"
+chown -R "$target":"$target" "/home/$target/chains"
+chown -R "$target":"$target" "/home/$target/ssl"
 ```
 
 **Get the hostnames that are being routed to this container.**
@@ -97,6 +101,7 @@ So, copy the current Dehydrated global config, rewrite the `wellknown` parameter
 ```bash
 cp /etc/letsencrypt/config "/home/$target/le_config"
 sed -i -e "s%^#\\?[[:space:]]*WELLKNOWN=.*\$%WELLKNOWN=\"/home/$target/acme-challenge\"%" "/home/$target/le_config"
+chown "$target":"$target" "/home/$target/le_config"
 ```
 
 **Handle possible acceptance-of-terms**
@@ -104,7 +109,7 @@ If this is the first run for Dehydrated for this host, then terms etc. need to b
 ```bash
 if [ $firstrun -gt 0 ]; then
     echo "$(date +'%T')" "[$myinvocation]: Accepting terms of service for first run with $target"
-    /usr/local/sbin/letsencrypt/dehydrated -f "/home/$target/le_config" --domains-txt "/home/$target/ssl/hostnames" -o "/home/$target/ssl" --register --accept-terms
+    sudo -u "$target" /usr/local/sbin/letsencrypt/dehydrated -f "/home/$target/le_config" --domains-txt "/home/$target/ssl/hostnames" -o "/home/$target/ssl" --register --accept-terms
 fi
 ```
 
